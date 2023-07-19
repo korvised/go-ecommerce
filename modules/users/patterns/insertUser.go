@@ -61,7 +61,7 @@ func (f *userReq) Customer() (IInsertUser, error) {
 
 	query := `
 	 INSERT INTO users (email, password, username, role_id)
-	 VALUES ($1, $2, $3, $4)
+	 VALUES ($1, $2, $3, 1)
 	 RETURNING "id";
 	`
 	if err := f.db.QueryRowxContext(
@@ -85,10 +85,32 @@ func (f *userReq) Customer() (IInsertUser, error) {
 }
 
 func (f *userReq) Admin() (IInsertUser, error) {
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	//defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	return nil, nil
+	query := `
+	 INSERT INTO users (email, password, username, role_id)
+	 VALUES ($1, $2, $3, 2)
+	 RETURNING "id";
+	`
+	if err := f.db.QueryRowxContext(
+		ctx,
+		query,
+		f.req.Email,
+		f.req.Password,
+		f.req.Username,
+	).Scan(&f.id); err != nil {
+		switch err.Error() {
+		case "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)":
+			return nil, fmt.Errorf("username have been used")
+		case "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)":
+			return nil, fmt.Errorf("email have been used")
+		default:
+			return nil, fmt.Errorf("insert user failed: %v", err)
+		}
+	}
+
+	return f, nil
 }
 
 func (f *userReq) Result() (*users.UserPassport, error) {
@@ -96,7 +118,7 @@ func (f *userReq) Result() (*users.UserPassport, error) {
 	 SELECT json_build_object('user', t, 'token', NULL) as json
 	 FROM (SELECT u.id, u.email, u.username, u.role_id
       FROM users u
-      WHERE u.id = 'U000001') as t;
+      WHERE u.id = $1) as t;
 	`
 
 	data := make([]byte, 0)

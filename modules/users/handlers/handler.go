@@ -1,7 +1,6 @@
 package usersHandlers
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
@@ -12,47 +11,67 @@ import (
 type userHandlersErrCode string
 
 const (
-	signUpParserErr userHandlersErrCode = "users-001"
+	signUpCustomerErr userHandlersErrCode = "users-001"
 )
 
-type IUserHandler interface {
+type IUsersHandler interface {
 	SignUpCustomer(c *fiber.Ctx) error
 }
 
-type userHandler struct {
-	cfg         config.IConfig
-	userUsecase usersUsecases.IUserUsecase
+type usersHandler struct {
+	cfg          config.IConfig
+	usersUsecase usersUsecases.IUsersUsecase
 }
 
-func UserHandler(cfg config.IConfig, userUsecase usersUsecases.IUserUsecase) IUserHandler {
-	return &userHandler{
-		cfg:         cfg,
-		userUsecase: userUsecase,
+func UsersHandler(cfg config.IConfig, usersUsecase usersUsecases.IUsersUsecase) IUsersHandler {
+	return &usersHandler{
+		cfg:          cfg,
+		usersUsecase: usersUsecase,
 	}
 }
 
-func (h userHandler) SignUpCustomer(c *fiber.Ctx) error {
+func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	// Request body parser
-	fmt.Println("call signup")
 	req := new(users.UserRegisterReq)
 	if err := c.BodyParser(req); err != nil {
-		fmt.Println("error")
-		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(signUpParserErr), err.Error()).Res()
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signUpCustomerErr),
+			err.Error(),
+		).Res()
 	}
 
 	// Email validation
 	if !req.IsEmail() {
-		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(signUpParserErr), "invalid email pattern").Res()
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signUpCustomerErr),
+			"email pattern is invalid",
+		).Res()
 	}
 
 	// Insert
-	result, err := h.userUsecase.InsertCustomer(req)
+	result, err := h.usersUsecase.InsertCustomer(req)
 	if err != nil {
 		switch err.Error() {
-		case "username have been used", "email have been used":
-			return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(signUpParserErr), err.Error()).Res()
+		case "username has been used":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
+		case "email has been used":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
 		default:
-			return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(signUpParserErr), err.Error()).Res()
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
 		}
 	}
 

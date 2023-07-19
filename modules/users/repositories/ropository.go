@@ -3,31 +3,37 @@ package usersRepositories
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/korvised/go-ecommerce/modules/users"
-	userPatterns "github.com/korvised/go-ecommerce/modules/users/patterns"
+	usersPatterns "github.com/korvised/go-ecommerce/modules/users/patterns"
 )
 
-type IUserRepository interface {
+type IUsersRepository interface {
 	InsertUser(req *users.UserRegisterReq, isAdmin bool) (*users.UserPassport, error)
 }
 
-type userRepository struct {
+type usersRepository struct {
 	db *sqlx.DB
 }
 
-func UserRepository(db *sqlx.DB) IUserRepository {
-	return &userRepository{
+func UsersRepository(db *sqlx.DB) IUsersRepository {
+	return &usersRepository{
 		db: db,
 	}
 }
 
-func (r *userRepository) InsertUser(req *users.UserRegisterReq, isAdmin bool) (*users.UserPassport, error) {
-	result := userPatterns.InsertUser(r.db, req, isAdmin)
+func (r *usersRepository) InsertUser(req *users.UserRegisterReq, isAdmin bool) (*users.UserPassport, error) {
+	result := usersPatterns.InsertUser(r.db, req, isAdmin)
 
 	var err error
 	if isAdmin {
 		result, err = result.Admin()
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		result, err = result.Customer()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get result from inserting
@@ -35,6 +41,5 @@ func (r *userRepository) InsertUser(req *users.UserRegisterReq, isAdmin bool) (*
 	if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }

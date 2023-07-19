@@ -43,9 +43,9 @@ func (m *moduleFactory) MonitorModule() {
 }
 
 func (m *moduleFactory) UserModule() {
-	repository := usersRepositories.UserRepository(m.s.db)
-	usecase := usersUsecases.UserUsecase(m.s.cfg, repository)
-	handler := usersHandlers.UserHandler(m.s.cfg, usecase)
+	repository := usersRepositories.UsersRepository(m.s.db)
+	usecase := usersUsecases.UsersUsecase(m.s.cfg, repository)
+	handler := usersHandlers.UsersHandler(m.s.cfg, usecase)
 
 	router := m.r.Group("/users")
 

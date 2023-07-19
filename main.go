@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/korvised/go-ecommerce/config"
+	"github.com/korvised/go-ecommerce/modules/servers"
+	"github.com/korvised/go-ecommerce/pkg/databases"
 	"os"
 )
 
@@ -15,10 +16,13 @@ func envPath() string {
 }
 
 func main() {
-
+	// Load environment config
 	cfg := config.LoadConfig(envPath())
 
-	fmt.Println(cfg.App().Url())
-	fmt.Println(cfg.Db().Url())
+	// Initial database connection
+	db := databases.DbConnect(cfg.Db())
+	defer db.Close()
 
+	// Start server
+	servers.NewServer(cfg, db).Start()
 }

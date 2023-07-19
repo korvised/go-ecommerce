@@ -15,7 +15,7 @@ migrateup:
 migratedown:
 	migrate -path pkg/databases/migrations -database "$(DB_URL)" -verbose down
 
-run-dev:
+dev:
 	air -c .air.dev.toml
 
-.PHONY: postgres createdb dropdb migrateup migratedown run-dev
+.PHONY: postgres createdb dropdb migrateup migratedown dev

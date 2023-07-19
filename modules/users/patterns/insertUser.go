@@ -73,9 +73,9 @@ func (f *userReq) Customer() (IInsertUser, error) {
 	).Scan(&f.id); err != nil {
 		switch err.Error() {
 		case "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)":
-			return nil, fmt.Errorf("username have been used")
+			return nil, fmt.Errorf("username is already in used")
 		case "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)":
-			return nil, fmt.Errorf("email have been used")
+			return nil, fmt.Errorf("email is already in used")
 		default:
 			return nil, fmt.Errorf("insert user failed: %v", err)
 		}
@@ -102,9 +102,9 @@ func (f *userReq) Admin() (IInsertUser, error) {
 	).Scan(&f.id); err != nil {
 		switch err.Error() {
 		case "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)":
-			return nil, fmt.Errorf("username have been used")
+			return nil, fmt.Errorf("username is already in used")
 		case "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)":
-			return nil, fmt.Errorf("email have been used")
+			return nil, fmt.Errorf("email is already in used")
 		default:
 			return nil, fmt.Errorf("insert user failed: %v", err)
 		}

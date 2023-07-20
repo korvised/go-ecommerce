@@ -1,6 +1,7 @@
 package usersRepositories
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/korvised/go-ecommerce/modules/users"
 	usersPatterns "github.com/korvised/go-ecommerce/modules/users/patterns"
@@ -8,6 +9,7 @@ import (
 
 type IUsersRepository interface {
 	InsertUser(req *users.UserRegisterReq, isAdmin bool) (*users.UserPassport, error)
+	FindOneUserByEmail(email string) (*users.UserCredentialCheck, error)
 }
 
 type usersRepository struct {
@@ -41,5 +43,20 @@ func (r *usersRepository) InsertUser(req *users.UserRegisterReq, isAdmin bool) (
 	if err != nil {
 		return nil, err
 	}
+	return user, nil
+}
+
+func (r *usersRepository) FindOneUserByEmail(email string) (*users.UserCredentialCheck, error) {
+	query := `
+	 SELECT id, email, password, username, role_id
+	 FROM users
+	 WHERE email = $1;
+	`
+
+	user := new(users.UserCredentialCheck)
+	if err := r.db.Get(user, query, email); err != nil {
+		return nil, fmt.Errorf("user not found: %v", err)
+	}
+
 	return user, nil
 }

@@ -19,6 +19,19 @@ type UserRegisterReq struct {
 	Username string `db:"username" json:"username" form:"username"`
 }
 
+type UserCredential struct {
+	Email    string `db:"email" json:"email" form:"email"`
+	Password string `db:"password" json:"password" form:"password"`
+}
+
+type UserCredentialCheck struct {
+	Id       string `db:"id"`
+	Email    string `db:"email"`
+	Password string `db:"password"`
+	Username string `db:"username"`
+	RoleId   int    `db:"role_id"`
+}
+
 func (obj *UserRegisterReq) BcryptHashing() error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(obj.Password), 10)
 	if err != nil {

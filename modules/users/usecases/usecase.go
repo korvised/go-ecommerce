@@ -5,6 +5,7 @@ import (
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/users"
 	usersRepositories "github.com/korvised/go-ecommerce/modules/users/repositories"
+	"github.com/korvised/go-ecommerce/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,6 +53,17 @@ func (u usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspor
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
+	// Sign tokens
+	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
+		Id:     user.Id,
+		RoleId: user.RoleId,
+	})
+
+	refreshToken, err := auth.NewAuth(auth.Refresh, u.cfg.Jwt(), &users.UserClaims{
+		Id:     user.Id,
+		RoleId: user.RoleId,
+	})
+
 	// Set password
 	passport := &users.UserPassport{
 		User: &users.User{
@@ -60,7 +72,15 @@ func (u usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspor
 			Username: user.Username,
 			RoleId:   user.RoleId,
 		},
-		Token: nil,
+		Token: &users.UserToken{
+			AccessToken:  accessToken.SignToken(),
+			RefreshToken: refreshToken.SignToken(),
+		},
+	}
+
+	// Insert oauth session
+	if err = u.usersRepository.InsertOauth(passport); err != nil {
+		return nil, err
 	}
 
 	return passport, nil

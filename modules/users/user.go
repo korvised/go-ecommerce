@@ -60,3 +60,8 @@ type UserToken struct {
 	AccessToken  string `db:"access_token" json:"access_token"`
 	RefreshToken string `db:"refresh_token" json:"refresh_token"`
 }
+
+type UserClaims struct {
+	Id     string `db:"id" json:"id"`
+	RoleId int    `db:"role" json:"role"`
+}

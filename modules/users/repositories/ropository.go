@@ -1,15 +1,18 @@
 package usersRepositories
 
 import (
+	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/korvised/go-ecommerce/modules/users"
 	usersPatterns "github.com/korvised/go-ecommerce/modules/users/patterns"
+	"time"
 )
 
 type IUsersRepository interface {
 	InsertUser(req *users.UserRegisterReq, isAdmin bool) (*users.UserPassport, error)
 	FindOneUserByEmail(email string) (*users.UserCredentialCheck, error)
+	InsertOauth(req *users.UserPassport) error
 }
 
 type usersRepository struct {
@@ -59,4 +62,27 @@ func (r *usersRepository) FindOneUserByEmail(email string) (*users.UserCredentia
 	}
 
 	return user, nil
+}
+
+func (r *usersRepository) InsertOauth(req *users.UserPassport) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	query := `
+	 INSERT INTO oauth (user_id, access_token, refresh_token)
+	 VALUES ($1, $2, $3)
+	 RETURNING "id";
+	`
+
+	if err := r.db.QueryRowContext(
+		ctx,
+		query,
+		req.User.Id,
+		req.Token.AccessToken,
+		req.Token.RefreshToken,
+	).Scan(&req.Token.Id); err != nil {
+		return fmt.Errorf("insert oauth failed: %v", err)
+	}
+
+	return nil
 }

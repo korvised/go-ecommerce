@@ -2,9 +2,9 @@ package servers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	middlewareHandlers "github.com/korvised/go-ecommerce/modules/middlewares/handlers"
-	middlewareRepositories "github.com/korvised/go-ecommerce/modules/middlewares/repositories"
-	middlewareUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
+	middlewaresHandlers "github.com/korvised/go-ecommerce/modules/middlewares/handlers"
+	middlewaresRepositories "github.com/korvised/go-ecommerce/modules/middlewares/repositories"
+	middlewaresUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
 	monitorHandlers "github.com/korvised/go-ecommerce/modules/monitor/handlers"
 	usersHandlers "github.com/korvised/go-ecommerce/modules/users/handlers"
 	usersRepositories "github.com/korvised/go-ecommerce/modules/users/repositories"
@@ -19,10 +19,10 @@ type IModuleFactory interface {
 type moduleFactory struct {
 	r   fiber.Router
 	s   *server
-	mid middlewareHandlers.IMiddlewareHandler
+	mid middlewaresHandlers.IMiddlewaresHandler
 }
 
-func InitModule(r fiber.Router, s *server, mid middlewareHandlers.IMiddlewareHandler) IModuleFactory {
+func InitModule(r fiber.Router, s *server, mid middlewaresHandlers.IMiddlewaresHandler) IModuleFactory {
 	return &moduleFactory{
 		r:   r,
 		s:   s,
@@ -30,10 +30,10 @@ func InitModule(r fiber.Router, s *server, mid middlewareHandlers.IMiddlewareHan
 	}
 }
 
-func InitMiddlewares(s *server) middlewareHandlers.IMiddlewareHandler {
-	repository := middlewareRepositories.MiddlewareRepository(s.db)
-	usecase := middlewareUsecases.MiddlewareUsecase(repository)
-	return middlewareHandlers.MiddlewareHandler(s.cfg, usecase)
+func InitMiddlewares(s *server) middlewaresHandlers.IMiddlewaresHandler {
+	repository := middlewaresRepositories.MiddlewaresRepository(s.db)
+	usecase := middlewaresUsecases.MiddlewareUsecase(repository)
+	return middlewaresHandlers.MiddlewaresHandler(s.cfg, usecase)
 }
 
 func (m *moduleFactory) MonitorModule() {
@@ -54,5 +54,5 @@ func (m *moduleFactory) UserModule() {
 	router.Post("/refresh", handler.RefreshPassport)
 	router.Post("/signout", handler.SingOut)
 	router.Post("/signup-admin", handler.SignUpAdmin)
-	router.Get("/secret", handler.GenerateAdminToken)
+	router.Get("/secret", m.mid.JwtAuth(), handler.GenerateAdminToken)
 }

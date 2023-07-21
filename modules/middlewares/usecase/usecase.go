@@ -5,14 +5,19 @@ import (
 )
 
 type IMiddlewareUsecase interface {
+	FindAccessToken(userId, accessToken string) bool
 }
 
 type middlewareUsecase struct {
-	middlewareRepository middlewareRepositories.IMiddlewareRepository
+	middlewareRepository middlewareRepositories.IMiddlewaresRepository
 }
 
-func MiddlewareUsecase(middlewareRepository middlewareRepositories.IMiddlewareRepository) IMiddlewareUsecase {
+func MiddlewareUsecase(middlewareRepository middlewareRepositories.IMiddlewaresRepository) IMiddlewareUsecase {
 	return &middlewareUsecase{
 		middlewareRepository: middlewareRepository,
 	}
+}
+
+func (u *middlewareUsecase) FindAccessToken(userId, accessToken string) bool {
+	return u.middlewareRepository.FindAccessToken(userId, accessToken)
 }

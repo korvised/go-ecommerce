@@ -2,6 +2,9 @@ package servers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoHandlers"
+	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoRepositories"
+	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoUsecases"
 	"github.com/korvised/go-ecommerce/modules/middlewares"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
@@ -15,6 +18,7 @@ import (
 type IModuleFactory interface {
 	MonitorModule()
 	UserModule()
+	AppinfoModule()
 }
 
 type moduleFactory struct {
@@ -50,24 +54,22 @@ func (m *moduleFactory) UserModule() {
 
 	router := m.r.Group("/users")
 
-	router.Post("/signup", handler.SignUpCustomer)
-	router.Post("/signin", handler.SignIn)
-	router.Post("/refresh", handler.RefreshPassport)
-	router.Post("/signout", handler.SingOut)
-	router.Post("/signup-admin", handler.SignUpAdmin)
+	router.Post("/signup", m.mid.ApiKeyAuth(), handler.SignUpCustomer)
+	router.Post("/signin", m.mid.ApiKeyAuth(), handler.SignIn)
+	router.Post("/refresh", m.mid.ApiKeyAuth(), handler.RefreshPassport)
+	router.Post("/signout", m.mid.ApiKeyAuth(), handler.SingOut)
+	router.Post("/signup-admin", m.mid.ApiKeyAuth(), handler.SignUpAdmin)
 
 	router.Get("/:user_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
-	router.Get(
-		"/admin/secret", m.mid.JwtAuth(),
-		m.mid.Authorize(middlewares.RoleAdmin),
-		handler.GenerateAdminToken,
-	)
+	router.Get("/admin/secret", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.GenerateAdminToken)
 }
 
 func (m *moduleFactory) AppinfoModule() {
-	//repository := appinfoRepositories.AppinfoRepository(m.s.db)
-	//usecase := appinfoUsecases.AppinfoUsecase(repository)
-	//handler := appinfoHandlers.AppinfoHandler(m.s.cfg, usecase)
-	//
-	//router := m.r.Group("/appinfo")
+	repository := appinfoRepositories.AppinfoRepository(m.s.db)
+	usecase := appinfoUsecases.AppinfoUsecase(repository)
+	handler := appinfoHandlers.AppinfoHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/appinfo")
+
+	router.Get("/apikey", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.GenerateApiKey)
 }

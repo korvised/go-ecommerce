@@ -17,13 +17,17 @@ type middlewaresHandlerErrCode string
 const (
 	UserId                                   = "UserId"
 	UserRoleId                               = "UserRoleId"
+	ApiKey                                   = "X-Api-Key"
 	routerCheckErr middlewaresHandlerErrCode = "middleware-001"
 	jwtAuthErr     middlewaresHandlerErrCode = "middleware-002"
 	paramsCheckErr middlewaresHandlerErrCode = "middleware-003"
 	authorizeErr   middlewaresHandlerErrCode = "middleware-004"
+	apiKeyErr      middlewaresHandlerErrCode = "middleware-005"
 )
 
 const unauthorizedMsg = "unauthorized, no permission to access this route"
+const requiredApiKeyMsg = "unauthorized, api key is required"
+const invalidApiKeyMsg = "unauthorized, invalid api key"
 
 type IMiddlewaresHandler interface {
 	Cor() fiber.Handler
@@ -32,6 +36,7 @@ type IMiddlewaresHandler interface {
 	JwtAuth() fiber.Handler
 	ParamsCheck() fiber.Handler
 	Authorize(expectRoleIds ...int) fiber.Handler
+	ApiKeyAuth() fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -59,8 +64,8 @@ func (h *middlewaresHandler) Cor() fiber.Handler {
 }
 
 func (h *middlewaresHandler) RouterCheck() fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		return entities.NewResponse(ctx).Error(
+	return func(c *fiber.Ctx) error {
+		return entities.NewResponse(c).Error(
 			fiber.StatusNotFound,
 			string(routerCheckErr),
 			"route not found",
@@ -77,54 +82,54 @@ func (h *middlewaresHandler) Logger() fiber.Handler {
 }
 
 func (h middlewaresHandler) JwtAuth() fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		authorization := ctx.Get("Authorization")
+	return func(c *fiber.Ctx) error {
+		authorization := c.Get("Authorization")
 		if authorization == "" {
-			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(jwtAuthErr), unauthorizedMsg).Res()
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(jwtAuthErr), unauthorizedMsg).Res()
 
 		}
 
 		token := strings.TrimPrefix(authorization, "Bearer ")
 		result, err := auth.ParseToken(h.cfg.Jwt(), token)
 		if err != nil {
-			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(jwtAuthErr), err.Error()).Res()
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(jwtAuthErr), err.Error()).Res()
 		}
 
 		claims := result.Claims
 		if !h.middlewaresUsecase.FindAccessToken(claims.Id, token) {
-			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(jwtAuthErr), unauthorizedMsg).Res()
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(jwtAuthErr), unauthorizedMsg).Res()
 		}
 
 		// Set userId
-		ctx.Locals(UserId, claims.Id)
-		ctx.Locals(UserRoleId, claims.RoleId)
+		c.Locals(UserId, claims.Id)
+		c.Locals(UserRoleId, claims.RoleId)
 
-		return ctx.Next()
+		return c.Next()
 	}
 }
 
 func (h *middlewaresHandler) ParamsCheck() fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		userId := ctx.Locals(UserId)
+	return func(c *fiber.Ctx) error {
+		userId := c.Locals(UserId)
 
-		if ctx.Params("user_id") != userId {
-			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(paramsCheckErr), unauthorizedMsg).Res()
+		if c.Params("user_id") != userId {
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(paramsCheckErr), unauthorizedMsg).Res()
 		}
 
-		return ctx.Next()
+		return c.Next()
 	}
 }
 
 func (h *middlewaresHandler) Authorize(expectRoleIds ...int) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		userRoleId, ok := ctx.Locals(UserRoleId).(int)
+	return func(c *fiber.Ctx) error {
+		userRoleId, ok := c.Locals(UserRoleId).(int)
 		if !ok {
-			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
 		}
 
 		roles, err := h.middlewaresUsecase.FindRoles()
 		if err != nil {
-			return entities.NewResponse(ctx).Error(fiber.StatusInternalServerError, string(authorizeErr), err.Error()).Res()
+			return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(authorizeErr), err.Error()).Res()
 		}
 
 		sum := 0
@@ -140,10 +145,25 @@ func (h *middlewaresHandler) Authorize(expectRoleIds ...int) fiber.Handler {
 
 		for i := range userValueBinary {
 			if userValueBinary[i]&expectedValueBinary[i] == 1 {
-				return ctx.Next()
+				return c.Next()
 			}
 		}
 
-		return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
+		return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
+	}
+}
+
+func (h *middlewaresHandler) ApiKeyAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		apiKey := c.Get(ApiKey)
+		if apiKey == "" {
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(apiKeyErr), requiredApiKeyMsg).Res()
+		}
+
+		if _, err := auth.ParseApiKey(h.cfg.Jwt(), apiKey); err != nil {
+			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(apiKeyErr), invalidApiKeyMsg).Res()
+		}
+
+		return c.Next()
 	}
 }

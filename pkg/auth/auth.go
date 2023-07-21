@@ -23,7 +23,7 @@ type IAuth interface {
 	SignToken() string
 }
 
-type Auth struct {
+type auth struct {
 	mapClaims *MapClaims
 	cfg       config.IJwtConfig
 }
@@ -49,13 +49,15 @@ func NewAuth(tokenType TokenType, cfg config.IJwtConfig, claims *users.UserClaim
 		return newRefreshToken(cfg, claims), nil
 	case Admin:
 		return newAdminToken(cfg), nil
+	case ApiKey:
+		return newApiKey(cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown token type")
 	}
 }
 
 func newAccessToken(cfg config.IJwtConfig, claims *users.UserClaims) IAuth {
-	return &Auth{
+	return &auth{
 		cfg: cfg,
 		mapClaims: &MapClaims{
 			Claims: claims,
@@ -72,7 +74,7 @@ func newAccessToken(cfg config.IJwtConfig, claims *users.UserClaims) IAuth {
 }
 
 func newRefreshToken(cfg config.IJwtConfig, claims *users.UserClaims) IAuth {
-	return &Auth{
+	return &auth{
 		cfg: cfg,
 		mapClaims: &MapClaims{
 			Claims: claims,
@@ -88,7 +90,7 @@ func newRefreshToken(cfg config.IJwtConfig, claims *users.UserClaims) IAuth {
 	}
 }
 
-func (a Auth) SignToken() string {
+func (a auth) SignToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
 	ss, _ := token.SignedString(a.cfg.SecretKey())
 	return ss
@@ -120,7 +122,7 @@ func ParseToken(cfg config.IJwtConfig, tokenString string) (*MapClaims, error) {
 }
 
 func RepeatToken(cfg config.IJwtConfig, claims *users.UserClaims, exp int64) string {
-	obj := &Auth{
+	obj := &auth{
 		cfg: cfg,
 		mapClaims: &MapClaims{
 			Claims: claims,

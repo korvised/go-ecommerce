@@ -8,27 +8,42 @@ import (
 	"time"
 )
 
-type IAdminAuth interface {
-	SignToken() string
-}
-
-type adminAuth struct {
+type apikey struct {
 	*auth
 }
 
-func (a adminAuth) SignToken() string {
+func (a apikey) SignToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
-	ss, _ := token.SignedString(a.cfg.AdminKey())
+	ss, _ := token.SignedString(a.cfg.ApiKey())
 	return ss
 }
 
-func ParseAdminToken(cfg config.IJwtConfig, tokenString string) (*MapClaims, error) {
+func newApiKey(cfg config.IJwtConfig) IAuth {
+	return &apikey{
+		auth: &auth{
+			cfg: cfg,
+			mapClaims: &MapClaims{
+				Claims: nil,
+				RegisteredClaims: jwt.RegisteredClaims{
+					Issuer:    "ecommerce-api",
+					Subject:   "api-key",
+					Audience:  []string{"admin", "customer"},
+					ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(1, 0, 0)), // 1 year
+					NotBefore: jwt.NewNumericDate(time.Now()),
+					IssuedAt:  jwt.NewNumericDate(time.Now()),
+				},
+			},
+		},
+	}
+}
+
+func ParseApiKey(cfg config.IJwtConfig, tokenString string) (*MapClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &MapClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("signing method is invalid")
 		}
 
-		return cfg.AdminKey(), nil
+		return cfg.ApiKey(), nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenMalformed) {
@@ -44,24 +59,5 @@ func ParseAdminToken(cfg config.IJwtConfig, tokenString string) (*MapClaims, err
 		return claims, nil
 	} else {
 		return nil, fmt.Errorf("claims type is invalid")
-	}
-}
-
-func newAdminToken(cfg config.IJwtConfig) IAuth {
-	return &adminAuth{
-		auth: &auth{
-			cfg: cfg,
-			mapClaims: &MapClaims{
-				Claims: nil,
-				RegisteredClaims: jwt.RegisteredClaims{
-					Issuer:    "ecommerce-api",
-					Subject:   "admin-token",
-					Audience:  []string{"admin"},
-					ExpiresAt: jwtTimeDurationCal(300), // 5m
-					NotBefore: jwt.NewNumericDate(time.Now()),
-					IssuedAt:  jwt.NewNumericDate(time.Now()),
-				},
-			},
-		},
 	}
 }

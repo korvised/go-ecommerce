@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/users"
-	usersRepositories "github.com/korvised/go-ecommerce/modules/users/repositories"
+	"github.com/korvised/go-ecommerce/modules/users/userRepositories"
 	"github.com/korvised/go-ecommerce/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )

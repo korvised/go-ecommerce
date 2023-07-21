@@ -1,8 +1,8 @@
-package middlewareUsecases
+package middlewaresUsecases
 
 import (
 	"github.com/korvised/go-ecommerce/modules/middlewares"
-	middlewareRepositories "github.com/korvised/go-ecommerce/modules/middlewares/repositories"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
 )
 
 type IMiddlewareUsecase interface {
@@ -11,10 +11,10 @@ type IMiddlewareUsecase interface {
 }
 
 type middlewareUsecase struct {
-	middlewareRepository middlewareRepositories.IMiddlewaresRepository
+	middlewareRepository middlewaresRepositories.IMiddlewaresRepository
 }
 
-func MiddlewareUsecase(middlewareRepository middlewareRepositories.IMiddlewaresRepository) IMiddlewareUsecase {
+func MiddlewareUsecase(middlewareRepository middlewaresRepositories.IMiddlewaresRepository) IMiddlewareUsecase {
 	return &middlewareUsecase{
 		middlewareRepository: middlewareRepository,
 	}

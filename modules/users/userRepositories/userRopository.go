@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/korvised/go-ecommerce/modules/users"
-	usersPatterns "github.com/korvised/go-ecommerce/modules/users/patterns"
+	"github.com/korvised/go-ecommerce/modules/users/userPatterns"
 	"time"
 )
 

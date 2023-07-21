@@ -3,13 +3,13 @@ package servers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/modules/middlewares"
-	middlewaresHandlers "github.com/korvised/go-ecommerce/modules/middlewares/handlers"
-	middlewaresRepositories "github.com/korvised/go-ecommerce/modules/middlewares/repositories"
-	middlewaresUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresUsecases"
 	monitorHandlers "github.com/korvised/go-ecommerce/modules/monitor/handlers"
-	usersHandlers "github.com/korvised/go-ecommerce/modules/users/handlers"
-	usersRepositories "github.com/korvised/go-ecommerce/modules/users/repositories"
-	usersUsecases "github.com/korvised/go-ecommerce/modules/users/usecases"
+	"github.com/korvised/go-ecommerce/modules/users/userHandlers"
+	"github.com/korvised/go-ecommerce/modules/users/userRepositories"
+	"github.com/korvised/go-ecommerce/modules/users/userUsecases"
 )
 
 type IModuleFactory interface {

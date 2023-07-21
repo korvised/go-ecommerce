@@ -6,7 +6,7 @@ import (
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
 	"github.com/korvised/go-ecommerce/modules/users"
-	usersUsecases "github.com/korvised/go-ecommerce/modules/users/usecases"
+	"github.com/korvised/go-ecommerce/modules/users/userUsecases"
 	"github.com/korvised/go-ecommerce/pkg/auth"
 	"strings"
 )

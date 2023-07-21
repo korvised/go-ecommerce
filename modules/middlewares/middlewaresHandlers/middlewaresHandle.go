@@ -1,4 +1,4 @@
-package middlewareHandlers
+package middlewaresHandlers
 
 import (
 	"github.com/gofiber/fiber/v2"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
-	middlewaresUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresUsecases"
 	"github.com/korvised/go-ecommerce/pkg/auth"
 	"github.com/korvised/go-ecommerce/pkg/utils"
 	"strings"

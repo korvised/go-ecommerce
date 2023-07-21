@@ -10,6 +10,7 @@ import (
 )
 
 type IUsersUsecase interface {
+	InsertAdmin(req *users.UserRegisterReq) (*users.UserPassport, error)
 	InsertCustomer(req *users.UserRegisterReq) (*users.UserPassport, error)
 	GetPassport(req *users.UserCredential) (*users.UserPassport, error)
 	RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error)
@@ -26,6 +27,21 @@ func UsersUsecase(cfg config.IConfig, userRepository usersRepositories.IUsersRep
 		cfg:             cfg,
 		usersRepository: userRepository,
 	}
+}
+
+func (u usersUsecase) InsertAdmin(req *users.UserRegisterReq) (*users.UserPassport, error) {
+	// Hashing password
+	if err := req.BcryptHashing(); err != nil {
+		return nil, err
+	}
+
+	// Insert user
+	result, err := u.usersRepository.InsertUser(req, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (u usersUsecase) InsertCustomer(req *users.UserRegisterReq) (*users.UserPassport, error) {

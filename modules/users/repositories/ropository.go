@@ -69,7 +69,7 @@ func (r *usersRepository) FindOneUserByEmail(email string) (*users.UserCredentia
 }
 
 func (r *usersRepository) InsertOauth(req *users.UserPassport) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	query := `
@@ -107,7 +107,7 @@ func (r *usersRepository) FindOneOauth(refreshToken string) (*users.Oauth, error
 }
 
 func (r *usersRepository) UpdateOauth(req *users.UserToken) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	query := `
@@ -139,7 +139,7 @@ func (r *usersRepository) GetProfile(userId string) (*users.User, error) {
 }
 
 func (r *usersRepository) DeleteOauth(oauthId string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	query := `

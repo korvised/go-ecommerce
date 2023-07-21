@@ -48,7 +48,7 @@ func NewAuth(tokenType TokenType, cfg config.IJwtConfig, claims *users.UserClaim
 	case Refresh:
 		return newRefreshToken(cfg, claims), nil
 	case Admin:
-		return newAccessToken(cfg, claims), nil
+		return newAdminToken(cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown token type")
 	}

@@ -2,6 +2,7 @@ package servers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/korvised/go-ecommerce/modules/middlewares"
 	middlewaresHandlers "github.com/korvised/go-ecommerce/modules/middlewares/handlers"
 	middlewaresRepositories "github.com/korvised/go-ecommerce/modules/middlewares/repositories"
 	middlewaresUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
@@ -55,6 +56,10 @@ func (m *moduleFactory) UserModule() {
 	router.Post("/signout", handler.SingOut)
 	router.Post("/signup-admin", handler.SignUpAdmin)
 
-	router.Get("/:user_id", m.mid.JwtAuth(), handler.GetUserProfile)
-	router.Get("/secret", m.mid.JwtAuth(), handler.GenerateAdminToken)
+	router.Get("/:user_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
+	router.Get(
+		"/admin/secret", m.mid.JwtAuth(),
+		m.mid.Authorize(middlewares.RoleAdmin),
+		handler.GenerateAdminToken,
+	)
 }

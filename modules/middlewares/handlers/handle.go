@@ -8,14 +8,19 @@ import (
 	"github.com/korvised/go-ecommerce/modules/entities"
 	middlewaresUsecases "github.com/korvised/go-ecommerce/modules/middlewares/usecase"
 	"github.com/korvised/go-ecommerce/pkg/auth"
+	"github.com/korvised/go-ecommerce/pkg/utils"
 	"strings"
 )
 
 type middlewaresHandlerErrCode string
 
 const (
+	UserId                                   = "UserId"
+	UserRoleId                               = "UserRoleId"
 	routerCheckErr middlewaresHandlerErrCode = "middleware-001"
-	jwtAuthErr     middlewaresHandlerErrCode = "middleware-003"
+	jwtAuthErr     middlewaresHandlerErrCode = "middleware-002"
+	paramsCheckErr middlewaresHandlerErrCode = "middleware-003"
+	authorizeErr   middlewaresHandlerErrCode = "middleware-004"
 )
 
 const unauthorizedMsg = "unauthorized, no permission to access this route"
@@ -25,6 +30,8 @@ type IMiddlewaresHandler interface {
 	RouterCheck() fiber.Handler
 	Logger() fiber.Handler
 	JwtAuth() fiber.Handler
+	ParamsCheck() fiber.Handler
+	Authorize(expectRoleIds ...int) fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -89,9 +96,54 @@ func (h middlewaresHandler) JwtAuth() fiber.Handler {
 		}
 
 		// Set userId
-		ctx.Locals("userId", claims.Id)
-		ctx.Locals("userRoleId", claims.RoleId)
+		ctx.Locals(UserId, claims.Id)
+		ctx.Locals(UserRoleId, claims.RoleId)
 
 		return ctx.Next()
+	}
+}
+
+func (h *middlewaresHandler) ParamsCheck() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		userId := ctx.Locals(UserId)
+
+		if ctx.Params("user_id") != userId {
+			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(paramsCheckErr), unauthorizedMsg).Res()
+		}
+
+		return ctx.Next()
+	}
+}
+
+func (h *middlewaresHandler) Authorize(expectRoleIds ...int) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		userRoleId, ok := ctx.Locals(UserRoleId).(int)
+		if !ok {
+			return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
+		}
+
+		roles, err := h.middlewaresUsecase.FindRoles()
+		if err != nil {
+			return entities.NewResponse(ctx).Error(fiber.StatusInternalServerError, string(authorizeErr), err.Error()).Res()
+		}
+
+		sum := 0
+		for _, v := range expectRoleIds {
+			sum += v
+		}
+
+		expectedValueBinary := utils.BinaryConverter(sum, len(roles))
+		userValueBinary := utils.BinaryConverter(userRoleId, len(roles))
+
+		// user ->     0 1 0
+		// expected -> 1 1 0
+
+		for i := range userValueBinary {
+			if userValueBinary[i]&expectedValueBinary[i] == 1 {
+				return ctx.Next()
+			}
+		}
+
+		return entities.NewResponse(ctx).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
 	}
 }

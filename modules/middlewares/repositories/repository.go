@@ -1,11 +1,14 @@
 package middlewaresRepositories
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/korvised/go-ecommerce/modules/middlewares"
 )
 
 type IMiddlewaresRepository interface {
 	FindAccessToken(userI, accessToken string) bool
+	FindRole() ([]*middlewares.Role, error)
 }
 
 type middlewaresRepository struct {
@@ -31,4 +34,19 @@ func (r *middlewaresRepository) FindAccessToken(userId, accessToken string) bool
 	}
 
 	return true
+}
+
+func (r *middlewaresRepository) FindRole() ([]*middlewares.Role, error) {
+	query := `
+	 SELECT id, title
+	 FROM roles
+	 ORDER BY id DESC;
+	`
+
+	roles := make([]*middlewares.Role, 0)
+	if err := r.db.Select(&roles, query); err != nil {
+		return nil, fmt.Errorf("roles are empty")
+	}
+
+	return roles, nil
 }

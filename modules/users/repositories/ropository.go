@@ -133,7 +133,7 @@ func (r *usersRepository) GetProfile(userId string) (*users.User, error) {
 
 	profile := new(users.User)
 	if err := r.db.Get(profile, query, userId); err != nil {
-		return nil, fmt.Errorf("get user failed: %v", err)
+		return nil, err
 	}
 	return profile, nil
 }

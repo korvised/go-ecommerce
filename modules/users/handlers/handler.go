@@ -1,12 +1,14 @@
 package usersHandlers
 
 import (
+	"database/sql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
 	"github.com/korvised/go-ecommerce/modules/users"
 	usersUsecases "github.com/korvised/go-ecommerce/modules/users/usecases"
 	"github.com/korvised/go-ecommerce/pkg/auth"
+	"strings"
 )
 
 type userHandlersErrCode string
@@ -18,6 +20,7 @@ const (
 	signOutErr            userHandlersErrCode = "users-004"
 	signUpAdminErr        userHandlersErrCode = "users-005"
 	generateAdminTokenErr userHandlersErrCode = "users-006"
+	getUserProfileErr     userHandlersErrCode = "users-007"
 )
 
 type IUsersHandler interface {
@@ -27,6 +30,7 @@ type IUsersHandler interface {
 	RefreshPassport(c *fiber.Ctx) error
 	SingOut(c *fiber.Ctx) error
 	GenerateAdminToken(c *fiber.Ctx) error
+	GetUserProfile(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -151,4 +155,23 @@ func (h *usersHandler) SingOut(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
+}
+
+func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
+	// Set params
+	userId := strings.Trim(c.Params("user_id"), " ")
+
+	// Get profile
+	profile, err := h.usersUsecase.GetUserProfile(userId)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(getUserProfileErr), err.Error()).Res()
+		default:
+			return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(getUserProfileErr), err.Error()).Res()
+
+		}
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, profile).Res()
 }

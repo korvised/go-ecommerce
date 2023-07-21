@@ -6,7 +6,7 @@ import (
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresUsecases"
-	monitorHandlers "github.com/korvised/go-ecommerce/modules/monitor/handlers"
+	"github.com/korvised/go-ecommerce/modules/monitor/MonitorHandlers"
 	"github.com/korvised/go-ecommerce/modules/users/userHandlers"
 	"github.com/korvised/go-ecommerce/modules/users/userRepositories"
 	"github.com/korvised/go-ecommerce/modules/users/userUsecases"
@@ -62,4 +62,12 @@ func (m *moduleFactory) UserModule() {
 		m.mid.Authorize(middlewares.RoleAdmin),
 		handler.GenerateAdminToken,
 	)
+}
+
+func (m *moduleFactory) AppinfoModule() {
+	//repository := appinfoRepositories.AppinfoRepository(m.s.db)
+	//usecase := appinfoUsecases.AppinfoUsecase(repository)
+	//handler := appinfoHandlers.AppinfoHandler(m.s.cfg, usecase)
+	//
+	//router := m.r.Group("/appinfo")
 }

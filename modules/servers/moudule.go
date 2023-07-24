@@ -5,6 +5,8 @@ import (
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoHandlers"
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoRepositories"
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoUsecases"
+	"github.com/korvised/go-ecommerce/modules/files/filesHandlers"
+	"github.com/korvised/go-ecommerce/modules/files/filesUsecases"
 	"github.com/korvised/go-ecommerce/modules/middlewares"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
@@ -17,8 +19,9 @@ import (
 
 type IModuleFactory interface {
 	MonitorModule()
-	UserModule()
+	UsersModule()
 	AppinfoModule()
+	FilesModule()
 }
 
 type moduleFactory struct {
@@ -47,7 +50,7 @@ func (m *moduleFactory) MonitorModule() {
 	m.r.Get("/", handler.HealthCheck)
 }
 
-func (m *moduleFactory) UserModule() {
+func (m *moduleFactory) UsersModule() {
 	repository := usersRepositories.UsersRepository(m.s.db)
 	usecase := usersUsecases.UsersUsecase(m.s.cfg, repository)
 	handler := usersHandlers.UsersHandler(m.s.cfg, usecase)
@@ -75,4 +78,14 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/categories", m.mid.ApiKeyAuth(), handler.FindCategories)
 	router.Post("/categories", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.AddCategories)
 	router.Delete("/categories/:category_id", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteCategory)
+}
+
+func (m *moduleFactory) FilesModule() {
+	usecase := filesUsecases.FilesUsecase(m.s.cfg)
+	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/files")
+
+	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.UploadFile)
+	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteFile)
 }

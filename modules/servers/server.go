@@ -42,14 +42,18 @@ func (s *server) Start() {
 	s.app.Use(middlewares.Logger())
 	s.app.Use(middlewares.Cor())
 
+	// Serve static assets from the "assets" folder
+	s.app.Static("/public", "./assets/images")
+
 	// Modules
 	v1 := s.app.Group("v1")
 
 	modules := InitModule(v1, s, middlewares)
 
 	modules.MonitorModule()
-	modules.UserModule()
+	modules.UsersModule()
 	modules.AppinfoModule()
+	modules.FilesModule()
 
 	s.app.Use(middlewares.RouterCheck())
 

@@ -123,7 +123,9 @@ type config struct {
 }
 
 type IAppConfig interface {
-	Url() string // host:port
+	Host() string // host:port
+	Port() int    // host:port
+	Url() string  // host:port
 	Name() string
 	Version() string
 	ReadTimeout() time.Duration
@@ -144,6 +146,10 @@ type app struct {
 	fileLimit    int // bytes
 	gcpBucket    string
 }
+
+func (a *app) Host() string { return a.host }
+
+func (a *app) Port() int { return a.port }
 
 func (a *app) Url() string {
 	return fmt.Sprintf("%s:%d", a.host, a.port)

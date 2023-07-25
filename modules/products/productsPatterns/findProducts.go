@@ -206,7 +206,7 @@ func (b *findProductBuilder) Count() int {
 }
 func (b *findProductBuilder) PrintQuery() {
 	utils.Debug(b.values)
-	fmt.Println(b.query)
+	utils.Debug(b.query)
 }
 
 type findProductEngineer struct {

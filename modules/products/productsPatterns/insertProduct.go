@@ -56,7 +56,7 @@ func (b *insertProductBuilder) insertProduct() error {
 	VALUES ($1, $2, $3)
 		RETURNING "id";`
 
-	if err := b.db.QueryRowContext(
+	if err := b.tx.QueryRowContext(
 		ctx,
 		query,
 		b.req.Title,
@@ -85,7 +85,7 @@ func (b *insertProductBuilder) insertCategory() error {
 		ctx,
 		query,
 		b.req.ID,
-		b.req.Category.Id,
+		b.req.Category.ID,
 	); err != nil {
 		b.tx.Rollback()
 		return fmt.Errorf("insert products_categories failed: %v", err)
@@ -121,7 +121,7 @@ func (b *insertProductBuilder) insertAttachment() error {
 		index += 3
 	}
 
-	if _, err := b.db.ExecContext(
+	if _, err := b.tx.ExecContext(
 		ctx,
 		query,
 		valueStack...,

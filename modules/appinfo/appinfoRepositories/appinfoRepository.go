@@ -77,7 +77,7 @@ func (r *appinfoRepository) InsertCategory(req []*appinfo.Category) error {
 
 	var i = 0
 	for rows.Next() {
-		if err = rows.Scan(&req[i].Id); err != nil {
+		if err = rows.Scan(&req[i].ID); err != nil {
 			return fmt.Errorf("scan categories id failed: %v", err)
 		}
 		i++

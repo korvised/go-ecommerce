@@ -1,6 +1,7 @@
 package productsRepositories
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -9,12 +10,15 @@ import (
 	"github.com/korvised/go-ecommerce/modules/files/filesUsecases"
 	"github.com/korvised/go-ecommerce/modules/products"
 	"github.com/korvised/go-ecommerce/modules/products/productsPatterns"
+	"time"
 )
 
 type IProductsRepository interface {
 	FindOneProduct(productID string) (*products.Product, error)
 	FindManyProducts(req *products.ProductFilter) ([]*products.Product, int)
 	InsertProduct(req *products.Product) (*products.Product, error)
+	UpdateProduct(req *products.Product) (*products.Product, error)
+	DeleteProduct(productID string) error
 }
 
 type productsRepository struct {
@@ -32,6 +36,9 @@ func ProductsRepository(db *sqlx.DB, cfg config.IConfig, filesUsecase filesUseca
 }
 
 func (r *productsRepository) FindOneProduct(productID string) (*products.Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
 	query := `
 	 SELECT to_jsonb(t)
 	 FROM (SELECT p.id,
@@ -58,19 +65,17 @@ func (r *productsRepository) FindOneProduct(productID string) (*products.Product
       LIMIT 1) AS t;
 	`
 
-	productByte := make([]byte, 0)
+	productBytes := make([]byte, 0)
 	product := &products.Product{
 		Images: make([]*entities.Image, 0),
 	}
 
-	if err := r.db.Get(&productByte, query, productID); err != nil {
-		return nil, err
+	if err := r.db.GetContext(ctx, &productBytes, query, productID); err != nil {
+		return nil, fmt.Errorf("get product failed: %v", err)
 	}
-
-	if err := json.Unmarshal(productByte, &product); err != nil {
+	if err := json.Unmarshal(productBytes, &product); err != nil {
 		return nil, fmt.Errorf("unmarshal product failed: %v", err)
 	}
-
 	return product, nil
 }
 
@@ -97,4 +102,33 @@ func (r *productsRepository) InsertProduct(req *products.Product) (*products.Pro
 	}
 
 	return product, nil
+}
+
+func (r *productsRepository) UpdateProduct(req *products.Product) (*products.Product, error) {
+	builder := productsPatterns.UpdateProductBuilder(r.db, req, r.filesUsecase)
+	engineer := productsPatterns.UpdateProductEngineer(builder)
+
+	if err := engineer.UpdateProduct(); err != nil {
+		return nil, err
+	}
+
+	product, err := r.FindOneProduct(req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}
+
+func (r *productsRepository) DeleteProduct(productID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	query := `DELETE FROM products WHERE id = $1`
+
+	if _, err := r.db.ExecContext(ctx, query, productID); err != nil {
+		return fmt.Errorf("delete product failed: %v", err)
+	}
+
+	return nil
 }

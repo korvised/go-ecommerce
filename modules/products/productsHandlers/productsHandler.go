@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/config"
+	"github.com/korvised/go-ecommerce/modules/appinfo"
 	"github.com/korvised/go-ecommerce/modules/entities"
 	"github.com/korvised/go-ecommerce/modules/files/filesUsecases"
 	"github.com/korvised/go-ecommerce/modules/products"
@@ -16,11 +17,13 @@ type productsHandlersErrCode string
 const (
 	findOneProductErr  productsHandlersErrCode = "products-001"
 	findManyProductErr productsHandlersErrCode = "products-002"
+	addProductErr      productsHandlersErrCode = "products-003"
 )
 
 type IProductsHandler interface {
 	FindOneProduct(c *fiber.Ctx) error
 	FindManyProducts(c *fiber.Ctx) error
+	AddProduct(c *fiber.Ctx) error
 }
 
 type productsHandler struct {
@@ -94,4 +97,21 @@ func (h *productsHandler) FindManyProducts(c *fiber.Ctx) error {
 
 	data := h.productsUsecase.FindManyProducts(req)
 	return entities.NewResponse(c).Success(fiber.StatusOK, data).Res()
+}
+
+func (h *productsHandler) AddProduct(c *fiber.Ctx) error {
+	req := &products.Product{
+		Category: &appinfo.Category{},
+		Images:   make([]*entities.Image, 0),
+	}
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(addProductErr), err.Error()).Res()
+	}
+
+	product, err := h.productsUsecase.AddProduct(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(addProductErr), err.Error()).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusCreated, product).Res()
 }

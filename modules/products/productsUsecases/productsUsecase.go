@@ -10,6 +10,7 @@ import (
 type IProductsUsecase interface {
 	FindOneProduct(productID string) (*products.Product, error)
 	FindManyProducts(req *products.ProductFilter) *entities.PaginateRes
+	AddProduct(req *products.Product) (*products.Product, error)
 }
 
 type productsUsecase struct {
@@ -36,4 +37,8 @@ func (u *productsUsecase) FindManyProducts(req *products.ProductFilter) *entitie
 		TotalPage: int(math.Ceil(float64(count) / (float64(req.Size)))),
 		TotalItem: count,
 	}
+}
+
+func (u *productsUsecase) AddProduct(req *products.Product) (*products.Product, error) {
+	return u.productsRepository.InsertProduct(req)
 }

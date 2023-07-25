@@ -12,6 +12,9 @@ import (
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresUsecases"
 	"github.com/korvised/go-ecommerce/modules/monitor/MonitorHandlers"
+	"github.com/korvised/go-ecommerce/modules/products/productsHandlers"
+	"github.com/korvised/go-ecommerce/modules/products/productsRepositories"
+	"github.com/korvised/go-ecommerce/modules/products/productsUsecases"
 	"github.com/korvised/go-ecommerce/modules/users/userHandlers"
 	"github.com/korvised/go-ecommerce/modules/users/userRepositories"
 	"github.com/korvised/go-ecommerce/modules/users/userUsecases"
@@ -22,6 +25,7 @@ type IModuleFactory interface {
 	UsersModule()
 	AppinfoModule()
 	FilesModule()
+	ProductsModule()
 }
 
 type moduleFactory struct {
@@ -88,4 +92,17 @@ func (m *moduleFactory) FilesModule() {
 
 	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.UploadFile)
 	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteFile)
+}
+
+func (m *moduleFactory) ProductsModule() {
+	fileUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+
+	repository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, fileUsecase)
+	usecase := productsUsecases.ProductsUsecase(repository)
+	handler := productsHandlers.ProductsHandler(m.s.cfg, usecase, fileUsecase)
+
+	router := m.r.Group("/products")
+
+	router.Get("/", m.mid.ApiKeyAuth(), handler.FindManyProducts)
+	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindOneProduct)
 }

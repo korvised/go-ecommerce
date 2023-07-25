@@ -74,10 +74,10 @@ func (r *productsRepository) FindOneProduct(productID string) (*products.Product
 }
 
 func (r *productsRepository) FindManyProducts(req *products.ProductFilter) ([]*products.Product, int) {
-	builder := productsPatterns.FindProductsBuild(r.db, req)
-	engineer := productsPatterns.FindProductsEngineer(builder)
+	builder := productsPatterns.FindProductBuilder(r.db, req)
+	engineer := productsPatterns.FindProductEngineer(builder)
 
-	result := engineer.FindProducts().Result()
+	result := engineer.FindProduct().Result()
 	count := engineer.CountProduct().Count()
 
 	return result, count

@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
+	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
 	"github.com/korvised/go-ecommerce/modules/orders"
 	"github.com/korvised/go-ecommerce/modules/orders/ordersUsecases"
 	"strings"
@@ -16,11 +17,13 @@ type ordersHandlersErrCode string
 const (
 	fineOneOrderErr   ordersHandlersErrCode = "orders-001"
 	fineManyOrdersErr ordersHandlersErrCode = "orders-002"
+	insertOrdersErr   ordersHandlersErrCode = "orders-003"
 )
 
 type IOrdersHandler interface {
 	FindOneOrder(c *fiber.Ctx) error
 	FindManyOrders(c *fiber.Ctx) error
+	InsertOrder(c *fiber.Ctx) error
 }
 
 type ordersHandler struct {
@@ -133,4 +136,48 @@ func (h *ordersHandler) FindManyOrders(c *fiber.Ctx) error {
 	data := h.ordersUsecase.FindManyOrders(req)
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, data).Res()
+}
+
+func (h *ordersHandler) InsertOrder(c *fiber.Ctx) error {
+	userID := c.Locals(middlewaresHandlers.UserID).(string)
+
+	req := &orders.Order{
+		Products: make([]*orders.ProductsOrder, 0),
+	}
+
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(insertOrdersErr), err.Error()).Res()
+	}
+
+	if len(req.Products) == 0 {
+		return entities.NewResponse(c).Error(
+			fiber.StatusBadRequest,
+			string(insertOrdersErr),
+			"products are empty",
+		).Res()
+	}
+
+	req.UserID = userID
+	req.Status = "waiting"
+	req.TotalPaid = 0
+
+	order, err := h.ordersUsecase.InsertOrder(req)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return entities.NewResponse(c).Error(
+				fiber.StatusBadRequest,
+				string(fineOneOrderErr),
+				"product not found",
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.StatusInternalServerError,
+				string(fineOneOrderErr),
+				err.Error(),
+			).Res()
+		}
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, order).Res()
 }

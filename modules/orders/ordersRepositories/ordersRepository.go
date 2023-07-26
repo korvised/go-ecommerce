@@ -13,6 +13,7 @@ import (
 type IOrdersRepository interface {
 	FindOneOrder(orderID string) (*orders.Order, error)
 	FindManyOrders(req *orders.OrderFilter) ([]*orders.Order, int)
+	InsertOrder(req *orders.Order) (string, error)
 }
 
 type ordersRepository struct {
@@ -50,8 +51,7 @@ func (r *ordersRepository) FindOneOrder(orderID string) (*orders.Order, error) {
 
 	orderBytes := make([]byte, 0)
 	order := &orders.Order{
-		TransferSlip: &orders.TransferSlip{},
-		Products:     make([]*orders.ProductsOrder, 0),
+		Products: make([]*orders.ProductsOrder, 0),
 	}
 
 	if err := r.db.GetContext(ctx, &orderBytes, query, orderID); err != nil {
@@ -72,4 +72,11 @@ func (r *ordersRepository) FindManyOrders(req *orders.OrderFilter) ([]*orders.Or
 	engineer := ordersPatterns.FindOrderEngineer(builder)
 
 	return engineer.FindOrder(), engineer.CountOrder()
+}
+
+func (r *ordersRepository) InsertOrder(req *orders.Order) (string, error) {
+	builder := ordersPatterns.InsertOrderBuilder(r.db, req)
+	engineer := ordersPatterns.InsertOrderEngineer(builder)
+
+	return engineer.InsertOrder()
 }

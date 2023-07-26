@@ -2,7 +2,7 @@ package orders
 
 import "github.com/korvised/go-ecommerce/modules/products"
 
-type Orders struct {
+type Order struct {
 	ID           string           `db:"id" json:"id"`
 	UserID       string           `db:"user_id" json:"user_id"`
 	TransferSlip *TransferSlip    `db:"transfer_slip" json:"transfer_slip"`
@@ -24,6 +24,6 @@ type TransferSlip struct {
 
 type ProductsOrder struct {
 	ID      string            `db:"id" json:"id"`
-	Qty     string            `db:"qty" json:"qty"`
+	Qty     int               `db:"qty" json:"qty"`
 	Product *products.Product `db:"product" json:"product"`
 }

@@ -5,18 +5,22 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
+	"github.com/korvised/go-ecommerce/modules/orders"
 	"github.com/korvised/go-ecommerce/modules/orders/ordersUsecases"
 	"strings"
+	"time"
 )
 
 type ordersHandlersErrCode string
 
 const (
-	fineOneOrderErr ordersHandlersErrCode = "orders-001"
+	fineOneOrderErr   ordersHandlersErrCode = "orders-001"
+	fineManyOrdersErr ordersHandlersErrCode = "orders-002"
 )
 
 type IOrdersHandler interface {
 	FindOneOrder(c *fiber.Ctx) error
+	FindManyOrders(c *fiber.Ctx) error
 }
 
 type ordersHandler struct {
@@ -53,4 +57,80 @@ func (h *ordersHandler) FindOneOrder(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, order).Res()
+}
+
+func (h *ordersHandler) FindManyOrders(c *fiber.Ctx) error {
+	req := &orders.OrderFilter{
+		SortReq:       &entities.SortReq{},
+		PaginationReq: &entities.PaginationReq{},
+	}
+
+	if err := c.QueryParser(req); err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(fineManyOrdersErr), err.Error()).Res()
+	}
+
+	// Pagination
+	if req.Page < 1 {
+		req.Page = 1
+	}
+
+	if req.Size < 5 {
+		req.Size = 5
+	}
+
+	// Sort
+	req.OrderBy = strings.ToLower(req.OrderBy)
+	orderByMap := map[string]string{
+		"id":         `o.id`,
+		"created_at": `o.created_at`,
+	}
+	if orderByMap[req.OrderBy] == "" {
+		req.OrderBy = orderByMap["id"]
+	} else {
+		req.OrderBy = orderByMap[req.OrderBy]
+	}
+
+	req.Sort = strings.ToUpper(req.Sort)
+	sortMap := map[string]string{
+		"ASC":  "ASC",
+		"DESC": "DESC",
+	}
+	if sortMap[req.Sort] == "" {
+		req.Sort = sortMap["DESC"]
+	} else {
+		req.Sort = sortMap[req.Sort]
+	}
+
+	// * Start Date  format: YYYY-MM-DD
+	if req.StartDate != "" {
+		start, err := time.Parse("2006-01-02", req.StartDate)
+		if err != nil {
+			return entities.NewResponse(c).Error(
+				fiber.StatusBadRequest,
+				string(fineManyOrdersErr),
+				"start date is invalid",
+			).Res()
+		}
+
+		req.StartDate = start.Format("2006-01-02")
+	}
+
+	// * End Date  format: YYYY-MM-DD
+	if req.EndDate != "" {
+		end, err := time.Parse("2006-01-02", req.EndDate)
+		if err != nil {
+			return entities.NewResponse(c).Error(
+				fiber.StatusBadRequest,
+				string(fineManyOrdersErr),
+				"end date is invalid",
+			).Res()
+		}
+
+		req.EndDate = end.Format("2006-01-02")
+	}
+
+	// Find orders
+	data := h.ordersUsecase.FindManyOrders(req)
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, data).Res()
 }

@@ -1,6 +1,18 @@
 package orders
 
-import "github.com/korvised/go-ecommerce/modules/products"
+import (
+	"github.com/korvised/go-ecommerce/modules/entities"
+	"github.com/korvised/go-ecommerce/modules/products"
+)
+
+type OrderFilter struct {
+	Search    string `query:"search"` // user_id, address, contact
+	Status    string `query:"status"`
+	StartDate string `query:"start_date"`
+	EndDate   string `query:"end_date"`
+	*entities.PaginationReq
+	*entities.SortReq
+}
 
 type Order struct {
 	ID           string           `db:"id" json:"id"`

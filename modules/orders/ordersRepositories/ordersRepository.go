@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/korvised/go-ecommerce/modules/orders"
+	"github.com/korvised/go-ecommerce/modules/orders/ordersPatterns"
 	"time"
 )
 
 type IOrdersRepository interface {
 	FindOneOrder(orderID string) (*orders.Order, error)
+	FindManyOrders(req *orders.OrderFilter) ([]*orders.Order, int)
 }
 
 type ordersRepository struct {
@@ -63,4 +65,11 @@ func (r *ordersRepository) FindOneOrder(orderID string) (*orders.Order, error) {
 	}
 
 	return order, nil
+}
+
+func (r *ordersRepository) FindManyOrders(req *orders.OrderFilter) ([]*orders.Order, int) {
+	builder := ordersPatterns.FindOrderBuilder(r.db, req)
+	engineer := ordersPatterns.FindOrderEngineer(builder)
+
+	return engineer.FindOrder(), engineer.CountOrder()
 }

@@ -81,10 +81,10 @@ func (r *usersRepository) InsertOauth(req *users.UserPassport) error {
 	if err := r.db.QueryRowContext(
 		ctx,
 		query,
-		req.User.Id,
+		req.User.ID,
 		req.Token.AccessToken,
 		req.Token.RefreshToken,
-	).Scan(&req.Token.Id); err != nil {
+	).Scan(&req.Token.ID); err != nil {
 		return fmt.Errorf("insert oauth failed: %v", err)
 	}
 

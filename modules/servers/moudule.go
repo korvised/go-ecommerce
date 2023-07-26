@@ -12,6 +12,9 @@ import (
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresRepositories"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresUsecases"
 	"github.com/korvised/go-ecommerce/modules/monitor/MonitorHandlers"
+	"github.com/korvised/go-ecommerce/modules/orders/ordersHandlers"
+	"github.com/korvised/go-ecommerce/modules/orders/ordersRepositories"
+	"github.com/korvised/go-ecommerce/modules/orders/ordersUsecases"
 	"github.com/korvised/go-ecommerce/modules/products/productsHandlers"
 	"github.com/korvised/go-ecommerce/modules/products/productsRepositories"
 	"github.com/korvised/go-ecommerce/modules/products/productsUsecases"
@@ -26,6 +29,7 @@ type IModuleFactory interface {
 	AppinfoModule()
 	FilesModule()
 	ProductsModule()
+	OrdersModule()
 }
 
 type moduleFactory struct {
@@ -111,4 +115,18 @@ func (m *moduleFactory) ProductsModule() {
 	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindOneProduct)
 
 	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteProduct)
+}
+
+func (m *moduleFactory) OrdersModule() {
+	fileUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+	productsRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, fileUsecase)
+
+	repository := ordersRepositories.OrdersRepository(m.s.db)
+	usecase := ordersUsecases.OrdersUsecase(repository, productsRepository)
+	handler := ordersHandlers.OrdersHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/orders")
+
+	_ = handler
+	_ = router
 }

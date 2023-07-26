@@ -14,8 +14,8 @@ type IUsersUsecase interface {
 	InsertCustomer(req *users.UserRegisterReq) (*users.UserPassport, error)
 	GetPassport(req *users.UserCredential) (*users.UserPassport, error)
 	RefreshPassport(req *users.UserRefreshCredential) (*users.UserPassport, error)
-	DeleteOauth(oauthId string) error
-	GetUserProfile(userId string) (*users.User, error)
+	DeleteOauth(oauthID string) error
+	GetUserProfile(userID string) (*users.User, error)
 }
 
 type usersUsecase struct {
@@ -74,22 +74,22 @@ func (u usersUsecase) GetPassport(req *users.UserCredential) (*users.UserPasspor
 
 	// Sign tokens
 	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), &users.UserClaims{
-		Id:     user.Id,
-		RoleId: user.RoleId,
+		ID:     user.ID,
+		RoleID: user.RoleID,
 	})
 
 	refreshToken, err := auth.NewAuth(auth.Refresh, u.cfg.Jwt(), &users.UserClaims{
-		Id:     user.Id,
-		RoleId: user.RoleId,
+		ID:     user.ID,
+		RoleID: user.RoleID,
 	})
 
 	// Set password
 	passport := &users.UserPassport{
 		User: &users.User{
-			Id:       user.Id,
+			ID:       user.ID,
 			Email:    user.Email,
 			Username: user.Username,
-			RoleId:   user.RoleId,
+			RoleID:   user.RoleID,
 		},
 		Token: &users.UserToken{
 			AccessToken:  accessToken.SignToken(),
@@ -119,14 +119,14 @@ func (u usersUsecase) RefreshPassport(req *users.UserRefreshCredential) (*users.
 	}
 
 	// Find profile
-	profile, err := u.usersRepository.GetProfile(oauth.UserId)
+	profile, err := u.usersRepository.GetProfile(oauth.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	newClaims := &users.UserClaims{
-		Id:     profile.Id,
-		RoleId: profile.RoleId,
+		ID:     profile.ID,
+		RoleID: profile.RoleID,
 	}
 
 	accessToken, err := auth.NewAuth(auth.Access, u.cfg.Jwt(), newClaims)
@@ -139,7 +139,7 @@ func (u usersUsecase) RefreshPassport(req *users.UserRefreshCredential) (*users.
 	passport := &users.UserPassport{
 		User: profile,
 		Token: &users.UserToken{
-			Id:           oauth.Id,
+			ID:           oauth.ID,
 			AccessToken:  accessToken.SignToken(),
 			RefreshToken: refreshToken,
 		},
@@ -154,16 +154,16 @@ func (u usersUsecase) RefreshPassport(req *users.UserRefreshCredential) (*users.
 	return passport, nil
 }
 
-func (u *usersUsecase) DeleteOauth(oauthId string) error {
-	if err := u.usersRepository.DeleteOauth(oauthId); err != nil {
+func (u *usersUsecase) DeleteOauth(oauthID string) error {
+	if err := u.usersRepository.DeleteOauth(oauthID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (u *usersUsecase) GetUserProfile(userId string) (*users.User, error) {
-	profile, err := u.usersRepository.GetProfile(userId)
+func (u *usersUsecase) GetUserProfile(userID string) (*users.User, error) {
+	profile, err := u.usersRepository.GetProfile(userID)
 	if err != nil {
 		return nil, err
 	}

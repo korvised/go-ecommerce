@@ -15,8 +15,8 @@ import (
 type middlewaresHandlerErrCode string
 
 const (
-	UserId                                   = "UserId"
-	UserRoleId                               = "UserRoleId"
+	UserID                                   = "UserID"
+	UserRoleID                               = "UserRoleID"
 	ApiKey                                   = "X-Api-Key"
 	routerCheckErr middlewaresHandlerErrCode = "middleware-001"
 	jwtAuthErr     middlewaresHandlerErrCode = "middleware-002"
@@ -35,7 +35,7 @@ type IMiddlewaresHandler interface {
 	Logger() fiber.Handler
 	JwtAuth() fiber.Handler
 	ParamsCheck() fiber.Handler
-	Authorize(expectRoleIds ...int) fiber.Handler
+	Authorize(expectRoleIDs ...int) fiber.Handler
 	ApiKeyAuth() fiber.Handler
 }
 
@@ -96,13 +96,13 @@ func (h middlewaresHandler) JwtAuth() fiber.Handler {
 		}
 
 		claims := result.Claims
-		if !h.middlewaresUsecase.FindAccessToken(claims.Id, token) {
+		if !h.middlewaresUsecase.FindAccessToken(claims.ID, token) {
 			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(jwtAuthErr), unauthorizedMsg).Res()
 		}
 
-		// Set userId
-		c.Locals(UserId, claims.Id)
-		c.Locals(UserRoleId, claims.RoleId)
+		// Set userID
+		c.Locals(UserID, claims.ID)
+		c.Locals(UserRoleID, claims.RoleID)
 
 		return c.Next()
 	}
@@ -110,9 +110,9 @@ func (h middlewaresHandler) JwtAuth() fiber.Handler {
 
 func (h *middlewaresHandler) ParamsCheck() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userId := c.Locals(UserId)
+		userID := c.Locals(UserID)
 
-		if c.Params("user_id") != userId {
+		if c.Params("user_id") != userID {
 			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(paramsCheckErr), unauthorizedMsg).Res()
 		}
 
@@ -120,9 +120,9 @@ func (h *middlewaresHandler) ParamsCheck() fiber.Handler {
 	}
 }
 
-func (h *middlewaresHandler) Authorize(expectRoleIds ...int) fiber.Handler {
+func (h *middlewaresHandler) Authorize(expectRoleIDs ...int) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userRoleId, ok := c.Locals(UserRoleId).(int)
+		userRoleID, ok := c.Locals(UserRoleID).(int)
 		if !ok {
 			return entities.NewResponse(c).Error(fiber.StatusUnauthorized, string(authorizeErr), unauthorizedMsg).Res()
 		}
@@ -133,12 +133,12 @@ func (h *middlewaresHandler) Authorize(expectRoleIds ...int) fiber.Handler {
 		}
 
 		sum := 0
-		for _, v := range expectRoleIds {
+		for _, v := range expectRoleIDs {
 			sum += v
 		}
 
 		expectedValueBinary := utils.BinaryConverter(sum, len(roles))
-		userValueBinary := utils.BinaryConverter(userRoleId, len(roles))
+		userValueBinary := utils.BinaryConverter(userRoleID, len(roles))
 
 		// user ->     0 1 0
 		// expected -> 1 1 0

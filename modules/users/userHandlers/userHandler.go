@@ -150,7 +150,7 @@ func (h *usersHandler) SingOut(c *fiber.Ctx) error {
 		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(signOutErr), err.Error()).Res()
 	}
 
-	if err := h.usersUsecase.DeleteOauth(req.OauthId); err != nil {
+	if err := h.usersUsecase.DeleteOauth(req.OauthID); err != nil {
 		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(signOutErr), err.Error()).Res()
 	}
 

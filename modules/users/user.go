@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	Id       string `db:"id" json:"id"`
+	ID       string `db:"id" json:"id"`
 	Email    string `db:"email" json:"email"`
 	Username string `db:"username" json:"username"`
-	RoleId   int    `db:"role_id" json:"role_id"`
+	RoleID   int    `db:"role_id" json:"role_id"`
 }
 
 type UserRegisterReq struct {
@@ -25,11 +25,11 @@ type UserCredential struct {
 }
 
 type UserCredentialCheck struct {
-	Id       string `db:"id"`
+	ID       string `db:"id"`
 	Email    string `db:"email"`
 	Password string `db:"password"`
 	Username string `db:"username"`
-	RoleId   int    `db:"role_id"`
+	RoleID   int    `db:"role_id"`
 }
 
 func (obj *UserRegisterReq) BcryptHashing() error {
@@ -56,14 +56,14 @@ type UserPassport struct {
 }
 
 type UserToken struct {
-	Id           string `db:"id" json:"id"`
+	ID           string `db:"id" json:"id"`
 	AccessToken  string `db:"access_token" json:"access_token"`
 	RefreshToken string `db:"refresh_token" json:"refresh_token"`
 }
 
 type UserClaims struct {
-	Id     string `db:"id" json:"id"`
-	RoleId int    `db:"role" json:"role"`
+	ID     string `db:"id" json:"id"`
+	RoleID int    `db:"role" json:"role"`
 }
 
 type UserRefreshCredential struct {
@@ -71,10 +71,10 @@ type UserRefreshCredential struct {
 }
 
 type Oauth struct {
-	Id     string `db:"id" json:"id"`
-	UserId string `db:"user_id" json:"user_id"`
+	ID     string `db:"id" json:"id"`
+	UserID string `db:"user_id" json:"user_id"`
 }
 
 type UserRemoveCredential struct {
-	OauthId string `db:"id" json:"oauth_id" form:"oauth_id"`
+	OauthID string `db:"id" json:"oauth_id" form:"oauth_id"`
 }

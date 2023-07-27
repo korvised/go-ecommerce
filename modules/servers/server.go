@@ -13,6 +13,7 @@ import (
 
 type IServer interface {
 	Start()
+	GetServer() *server
 }
 
 type server struct {
@@ -53,8 +54,8 @@ func (s *server) Start() {
 	modules.MonitorModule()
 	modules.UsersModule()
 	modules.AppinfoModule()
-	modules.FilesModule()
-	modules.ProductsModule()
+	modules.FilesModule().Init()
+	modules.ProductsModule().Init()
 	modules.OrdersModule()
 
 	s.app.Use(middlewares.RouterCheck())
@@ -75,3 +76,5 @@ func (s *server) Start() {
 		log.Printf("can not start server: %v", err)
 	}
 }
+
+func (s *server) GetServer() *server { return s }

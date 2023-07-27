@@ -5,7 +5,6 @@ import (
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoHandlers"
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoRepositories"
 	"github.com/korvised/go-ecommerce/modules/appinfo/appinfoUsecases"
-	"github.com/korvised/go-ecommerce/modules/files/filesHandlers"
 	"github.com/korvised/go-ecommerce/modules/files/filesUsecases"
 	"github.com/korvised/go-ecommerce/modules/middlewares"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
@@ -15,9 +14,7 @@ import (
 	"github.com/korvised/go-ecommerce/modules/orders/ordersHandlers"
 	"github.com/korvised/go-ecommerce/modules/orders/ordersRepositories"
 	"github.com/korvised/go-ecommerce/modules/orders/ordersUsecases"
-	"github.com/korvised/go-ecommerce/modules/products/productsHandlers"
 	"github.com/korvised/go-ecommerce/modules/products/productsRepositories"
-	"github.com/korvised/go-ecommerce/modules/products/productsUsecases"
 	"github.com/korvised/go-ecommerce/modules/users/userHandlers"
 	"github.com/korvised/go-ecommerce/modules/users/userRepositories"
 	"github.com/korvised/go-ecommerce/modules/users/userUsecases"
@@ -27,8 +24,8 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
-	FilesModule()
-	ProductsModule()
+	FilesModule() IFileModule
+	ProductsModule() IProductModule
 	OrdersModule()
 }
 
@@ -86,35 +83,6 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/categories", m.mid.ApiKeyAuth(), handler.FindCategories)
 	router.Post("/categories", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.AddCategories)
 	router.Delete("/categories/:category_id", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteCategory)
-}
-
-func (m *moduleFactory) FilesModule() {
-	usecase := filesUsecases.FilesUsecase(m.s.cfg)
-	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
-
-	router := m.r.Group("/files")
-
-	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.UploadFile)
-	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteFile)
-}
-
-func (m *moduleFactory) ProductsModule() {
-	fileUsecase := filesUsecases.FilesUsecase(m.s.cfg)
-
-	repository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, fileUsecase)
-	usecase := productsUsecases.ProductsUsecase(repository)
-	handler := productsHandlers.ProductsHandler(m.s.cfg, usecase, fileUsecase)
-
-	router := m.r.Group("/products")
-
-	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.AddProduct)
-
-	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.UpdateProduct)
-
-	router.Get("/", m.mid.ApiKeyAuth(), handler.FindManyProducts)
-	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindOneProduct)
-
-	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(middlewares.RoleAdmin), handler.DeleteProduct)
 }
 
 func (m *moduleFactory) OrdersModule() {

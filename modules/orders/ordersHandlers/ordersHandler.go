@@ -3,8 +3,10 @@ package ordersHandlers
 import (
 	"database/sql"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/korvised/go-ecommerce/config"
 	"github.com/korvised/go-ecommerce/modules/entities"
+	"github.com/korvised/go-ecommerce/modules/middlewares"
 	"github.com/korvised/go-ecommerce/modules/middlewares/middlewaresHandlers"
 	"github.com/korvised/go-ecommerce/modules/orders"
 	"github.com/korvised/go-ecommerce/modules/orders/ordersUsecases"
@@ -17,13 +19,15 @@ type ordersHandlersErrCode string
 const (
 	fineOneOrderErr   ordersHandlersErrCode = "orders-001"
 	fineManyOrdersErr ordersHandlersErrCode = "orders-002"
-	insertOrdersErr   ordersHandlersErrCode = "orders-003"
+	insertOrderErr    ordersHandlersErrCode = "orders-003"
+	updateOrderErr    ordersHandlersErrCode = "orders-004"
 )
 
 type IOrdersHandler interface {
 	FindOneOrder(c *fiber.Ctx) error
 	FindManyOrders(c *fiber.Ctx) error
 	InsertOrder(c *fiber.Ctx) error
+	UpdateOrder(c *fiber.Ctx) error
 }
 
 type ordersHandler struct {
@@ -146,13 +150,13 @@ func (h *ordersHandler) InsertOrder(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(req); err != nil {
-		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(insertOrdersErr), err.Error()).Res()
+		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(insertOrderErr), err.Error()).Res()
 	}
 
 	if len(req.Products) == 0 {
 		return entities.NewResponse(c).Error(
 			fiber.StatusBadRequest,
-			string(insertOrdersErr),
+			string(insertOrderErr),
 			"products are empty",
 		).Res()
 	}
@@ -163,20 +167,55 @@ func (h *ordersHandler) InsertOrder(c *fiber.Ctx) error {
 
 	order, err := h.ordersUsecase.InsertOrder(req)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			return entities.NewResponse(c).Error(
-				fiber.StatusBadRequest,
-				string(fineOneOrderErr),
-				"product not found",
-			).Res()
-		default:
-			return entities.NewResponse(c).Error(
-				fiber.StatusInternalServerError,
-				string(fineOneOrderErr),
-				err.Error(),
-			).Res()
+		return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(insertOrderErr), err.Error()).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, order).Res()
+}
+
+func (h *ordersHandler) UpdateOrder(c *fiber.Ctx) error {
+	orderID := strings.Trim(c.Params("order_id"), " ")
+	roleID := c.Locals(middlewaresHandlers.UserRoleID).(int)
+
+	req := new(orders.UpdateOrderReq)
+
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusBadRequest, string(updateOrderErr), err.Error()).Res()
+	}
+
+	req.ID = orderID
+	req.Status = strings.ToLower(req.Status)
+
+	statusMap := map[string]string{
+		"waiting":   "waiting",
+		"shipping":  "shipping",
+		"completed": "completed",
+		"canceled":  "canceled",
+	}
+
+	// Check role user can update only "canceled" status
+	if roleID == middlewares.RoleUser && req.Status != statusMap["canceled"] {
+		return entities.NewResponse(c).Error(
+			fiber.StatusBadRequest,
+			string(updateOrderErr),
+			"incorrect order status",
+		).Res()
+	}
+
+	if req.TransferSlip != nil {
+		if req.TransferSlip.ID == "" {
+			req.TransferSlip.ID = uuid.NewString()
 		}
+
+		// YYYY-MM-DD HH:MM:SS
+		// 2006-01-02 15:04:05
+		loc, _ := time.LoadLocation("Asia/Vientiane")
+		req.TransferSlip.CreatedAt = time.Now().In(loc).Format("2006-01-02 15:04:05")
+	}
+
+	order, err := h.ordersUsecase.UpdateOrder(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(fiber.StatusInternalServerError, string(updateOrderErr), err.Error()).Res()
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, order).Res()

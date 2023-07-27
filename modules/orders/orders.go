@@ -39,3 +39,9 @@ type ProductsOrder struct {
 	Qty     int               `db:"qty" json:"qty"`
 	Product *products.Product `db:"product" json:"product"`
 }
+
+type UpdateOrderReq struct {
+	ID           string        `form:"id" json:"id"`
+	TransferSlip *TransferSlip `form:"transfer_slip" json:"transfer_slip"`
+	Status       string        `form:"status" json:"status"`
+}
